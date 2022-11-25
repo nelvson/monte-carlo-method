@@ -1,4 +1,4 @@
-const BASE_API = 'http://localhost:400';
+const BASE_API = 'http://localhost:4000';
 
 type Request = {
 	requestInit?: RequestInit;
@@ -7,7 +7,7 @@ type Request = {
 };
 
 const fetchAPI = async (path: string, request: Request = {}) => {
-	let { requestInit, body, token } = request;
+	let { requestInit, body } = request;
 	let url = `${BASE_API}${path}`;
 
 	let response = await fetch(url, {
@@ -15,7 +15,6 @@ const fetchAPI = async (path: string, request: Request = {}) => {
 		body: body && JSON.stringify(body),
 		headers: {
 			'Content-Type': 'application/json',
-			'authorization': token ?? ''
 		}
 	});
 
