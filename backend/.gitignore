@@ -1,0 +1,9 @@
+/node_modules
+*.env
+
+*.sw*
+
+/coverage
+
+yarn-error.log
+*.log
