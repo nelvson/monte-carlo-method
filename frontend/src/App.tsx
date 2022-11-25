@@ -1,10 +1,10 @@
-import React, { useState } from "react";
-import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View, TextInput, Button } from "react-native";
+import React, { useState, useRef, useEffect } from "react";
+import * as d3 from "d3";
+import "./App.css";
 
-import {appendUrlQuery, fetch} from './helper';
+import { appendUrlQuery, fetch } from "./helper";
 
-function calc(data: Array<{ x: number; y: number }>) {
+function calc(data: Array<AxisXY>) {
   let circlePoints = 0;
 
   data.forEach((datum) => {
@@ -17,55 +17,87 @@ function calc(data: Array<{ x: number; y: number }>) {
   console.log((4 * circlePoints) / data.length);
 }
 
-export default function App() {
-  let [numberOfPoints, setNumberOfPoints] = useState(0);
-  return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        value={String(numberOfPoints)}
-        onChangeText={(val) => {
-          if (Number.isNaN(Number(val))) {
-            setNumberOfPoints(0);
-          } else {
-            setNumberOfPoints(Number(val));
-          }
-        }}
-        placeholder="Number of Points"
-      />
-      <Button
-        onPress={async () => {
-          let fetchData: {
-            status: string;
-            data: Array<{ x: number; y: number }>;
-            message: string;
-          } = await fetch(
-            appendUrlQuery("/generatePoints", {
-              numberOfPoints,
-            })
-          );
+type AxisXY = { x: number; y: number };
 
-          calc(fetchData.data);
-        }}
-        title="Fetch"
-      />
-      <StatusBar style="auto" />
-    </View>
+function Axis(props: { data: Array<AxisXY> }) {
+  let { data } = props;
+  const ref = useRef(null);
+  
+  useEffect(() => {
+    const xScale = d3.scaleLinear().domain([0, 1]).range([0, 200]);
+    const yScale = d3.scaleLinear().domain([0, 1]).range([200, 0]);
+    const svgElement = d3
+      .select(ref.current)
+      .attr("width", 400)
+      .attr("height", 400);
+    const axisGenerator = d3.axisBottom(xScale);
+    const yAxisGenerator = d3.axisLeft(yScale);
+    svgElement
+      .append("g")
+      .call(axisGenerator)
+      .attr("transform", "translate(0, 200)");
+    svgElement.append("g").call(yAxisGenerator);
+
+    data.forEach((datum) => {
+      svgElement
+        .append("circle")
+        .attr("cx", xScale(datum.x))
+        .attr("cy", yScale(datum.y))
+        .attr("r", 2);
+    });
+  }, [data]);
+
+  return <svg ref={ref} />;
+}
+
+function App() {
+  let [numberOfPoints, setNumberOfPoints] = useState(0);
+  let [points, setPoints] = useState<Array<AxisXY>>([]);
+
+  return (
+    <div className="App">
+      <header className="App-header">
+        <Axis data={points} />
+        <input
+          type="number"
+          id="numberOfPoints"
+          name="numberOfPoints"
+          value={numberOfPoints}
+          onChange={(e) => {
+            const val = e.target.value;
+
+            if (Number.isNaN(Number(val))) {
+              setNumberOfPoints(0);
+            } else {
+              setNumberOfPoints(Number(val));
+            }
+          }}
+          placeholder="Number of Points"
+        />
+
+        <button
+          onClick={async () => {
+            d3.selectAll("circle").attr("r", 0);
+            
+            let fetchData: {
+              status: string;
+              data: Array<AxisXY>;
+              message: string;
+            } = await fetch(
+              appendUrlQuery("/generatePoints", {
+                numberOfPoints,
+              })
+            ); //TODO:handle error
+
+            setPoints(fetchData.data);
+            calc(fetchData.data);
+          }}
+        >
+          fetch
+        </button>
+      </header>
+    </div>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    flexDirection: "row",
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  input: {
-    height: 40,
-    margin: 12,
-    borderWidth: 1,
-    padding: 10,
-  },
-});
+export default App;
