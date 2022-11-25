@@ -22,7 +22,7 @@ type AxisXY = { x: number; y: number };
 function Axis(props: { data: Array<AxisXY> }) {
   let { data } = props;
   const ref = useRef(null);
-  
+
   useEffect(() => {
     const xScale = d3.scaleLinear().domain([0, 1]).range([0, 200]);
     const yScale = d3.scaleLinear().domain([0, 1]).range([200, 0]);
@@ -39,11 +39,17 @@ function Axis(props: { data: Array<AxisXY> }) {
     svgElement.append("g").call(yAxisGenerator);
 
     data.forEach((datum) => {
+      let color = 'red';
+      let d = datum.x * datum.x + datum.y * datum.y;
+      if (d <= 1) {
+        color = 'green';
+      }
       svgElement
         .append("circle")
         .attr("cx", xScale(datum.x))
         .attr("cy", yScale(datum.y))
-        .attr("r", 2);
+        .attr("r", 2)
+        .attr('fill', color);
     });
   }, [data]);
 
@@ -78,7 +84,7 @@ function App() {
         <button
           onClick={async () => {
             d3.selectAll("circle").attr("r", 0);
-            
+
             let fetchData: {
               status: string;
               data: Array<AxisXY>;
