@@ -30,26 +30,45 @@ function Axis(props: { data: Array<AxisXY> }) {
       .select(ref.current)
       .attr("width", 400)
       .attr("height", 400);
-    const axisGenerator = d3.axisBottom(xScale);
+
+    const arcGenerator = d3.arc().innerRadius(0).outerRadius(90);
+    arcGenerator({
+      endAngle: Math.PI / 2,
+      startAngle: -Math.PI / 2,
+      innerRadius: 0,
+      outerRadius: 100,
+    });
+
+    svgElement.append("path").attr("d", d3.arc()({
+      endAngle: Math.PI / 2,
+      startAngle: 0,
+      innerRadius: 0,
+      outerRadius: 200,
+    }))
+    .attr('fill', 'white')
+    .style('stroke', 'black')
+    .attr("transform", "translate(0,200)");
+
+    const xAxisGenerator = d3.axisBottom(xScale);
     const yAxisGenerator = d3.axisLeft(yScale);
     svgElement
       .append("g")
-      .call(axisGenerator)
+      .call(xAxisGenerator)
       .attr("transform", "translate(0, 200)");
     svgElement.append("g").call(yAxisGenerator);
 
     data.forEach((datum) => {
-      let color = 'red';
+      let color = "red";
       let d = datum.x * datum.x + datum.y * datum.y;
       if (d <= 1) {
-        color = 'green';
+        color = "green";
       }
       svgElement
         .append("circle")
         .attr("cx", xScale(datum.x))
         .attr("cy", yScale(datum.y))
         .attr("r", 2)
-        .attr('fill', color);
+        .attr("fill", color);
     });
   }, [data]);
 
