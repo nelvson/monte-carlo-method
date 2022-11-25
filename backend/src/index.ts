@@ -1,8 +1,13 @@
 import express from 'express';
 import bodyParser from 'body-parser';
+import cors from 'cors'
 const app: express.Application = express();
 
 const initiate = async () => {
+  app.use(bodyParser.urlencoded({ extended: false }));
+  app.use(bodyParser.json());
+  app.use(cors())
+
   app.listen(4000, () => {
     console.log(`🚀 Server ready at http://localhost:${4000}`);
   });
