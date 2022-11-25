@@ -12,6 +12,43 @@ const initiate = async () => {
     res.send('it works!');
   });
 
+  app.get('/generatePoints', (req: express.Request<{}, {}, {}, { numberOfPoints: number }>, res: express.Response) => {
+    const { numberOfPoints } = req.query;
+
+    if (Number.isNaN(Number(numberOfPoints))) {
+      res.status(400).json({
+        status: 'Error',
+        data: [],
+        message: 'Number of Points should be a number'
+      });
+    }
+
+    let data: Array<{ x: number, y: number }> = [];
+    if (numberOfPoints < 1) {
+      res.status(400).json({
+        status: 'Error',
+        data: [],
+        message: 'Number of Points cannot be less than 1'
+      });
+    } else {
+
+      for (let i = 0; numberOfPoints > i; i++) {
+        let pointX = Math.random();
+        let pointY = Math.random();
+
+        data.push({
+          x: pointX,
+          y: pointY
+        })
+      }
+
+      res.status(200).json({
+        status: 'Success',
+        data,
+        message: '',
+      });
+    }
+  });
 };
 
 initiate();
