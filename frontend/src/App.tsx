@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import * as d3 from "d3";
+
 import "./App.css";
 
 import HowDoesItWork from "./content/HowDoesItWork"
@@ -109,6 +110,7 @@ function App() {
         <Axis data={points} />
 
         <div className="inputPoints">
+          <p>Enter a number ( n {'>'} 0),then click Generate Points to randomly generated points</p>
           <div>
             <input
               type="number"
