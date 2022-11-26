@@ -30,6 +30,10 @@ figcaption {
   justify-content: center;
 }
 
+.inputPoints > p {
+  font-size: 12px;
+}
+
 .inputPoints > div {
   flex-direction: row;
 }
