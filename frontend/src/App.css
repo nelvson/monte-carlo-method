@@ -17,6 +17,11 @@ h1, h2, h3, h4, h5 {
   }
 }
 
+figcaption {
+  color: grey;
+  font-size: small;
+}
+
 .inputPoints {
   display: flex;
   margin-top: -200px;
@@ -32,6 +37,26 @@ h1, h2, h3, h4, h5 {
 .how-does-it-work {
   padding-left: 100px;
   padding-right: 100px;
+}
+
+.how-does-it-work > div {
+  flex-direction: row;
+  display: flex;
+  align-items: center;
+}
+
+.footer {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+}
+
+.citations {
+  flex: 1;
+}
+
+.readmore {
+  flex: 3;
 }
 
 .App-content {
