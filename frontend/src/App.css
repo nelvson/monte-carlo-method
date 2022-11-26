@@ -7,17 +7,37 @@
   pointer-events: none;
 }
 
+h1, h2, h3, h4, h5 {
+  color: #393333;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
   }
 }
 
-.App-header {
-  background-color: #fff;
-  min-height: 100vh;
+.inputPoints {
   display: flex;
+  margin-top: -200px;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.inputPoints > text {
+  font-size: 14px;
+}
+
+.how-does-it-work {
+  padding-left: 100px;
+  padding-right: 100px;
+}
+
+.App-content {
+  background-color: white;
+  display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   font-size: calc(10px + 2vmin);

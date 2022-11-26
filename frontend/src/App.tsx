@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import * as d3 from "d3";
 import "./App.css";
 
@@ -14,7 +14,17 @@ function calc(data: Array<AxisXY>) {
     }
   });
 
-  console.log((4 * circlePoints) / data.length);
+  const totalPointsNode = document.getElementById("totalPointsNode");
+  const inside = document.getElementById("pointsInside");
+  const out = document.getElementById("piEstimation");
+
+  if (!inside) return;
+  if (!out) return;
+  if (!totalPointsNode) return;
+
+  totalPointsNode.innerHTML = String(data.length);
+  out.innerHTML = String((4 * circlePoints) / data.length);
+  inside.innerHTML = String(circlePoints ? circlePoints : 0);
 }
 
 type AxisXY = { x: number; y: number };
@@ -39,15 +49,20 @@ function Axis(props: { data: Array<AxisXY> }) {
       outerRadius: 100,
     });
 
-    svgElement.append("path").attr("d", d3.arc()({
-      endAngle: Math.PI / 2,
-      startAngle: 0,
-      innerRadius: 0,
-      outerRadius: 200,
-    }))
-    .attr('fill', 'white')
-    .style('stroke', 'black')
-    .attr("transform", "translate(0,200)");
+    svgElement
+      .append("path")
+      .attr(
+        "d",
+        d3.arc()({
+          endAngle: Math.PI / 2,
+          startAngle: 0,
+          innerRadius: 0,
+          outerRadius: 200,
+        })
+      )
+      .attr("fill", "#F5FFF5")
+      .style("stroke", "#6B6565")
+      .attr("transform", "translate(0,200)");
 
     const xAxisGenerator = d3.axisBottom(xScale);
     const yAxisGenerator = d3.axisLeft(yScale);
@@ -55,7 +70,7 @@ function Axis(props: { data: Array<AxisXY> }) {
       .append("g")
       .call(xAxisGenerator)
       .attr("transform", "translate(0, 200)");
-    svgElement.append("g").call(yAxisGenerator);
+    svgElement.append("g").call(yAxisGenerator).attr("transform");
 
     data.forEach((datum) => {
       let color = "red";
@@ -81,46 +96,69 @@ function App() {
 
   return (
     <div className="App">
-      <header className="App-header">
+      <h3>Monte Carlo Method</h3>
+      <h4>for Pi Estimation</h4>
+      <div className="App-content">
         <Axis data={points} />
-        <input
-          type="number"
-          id="numberOfPoints"
-          name="numberOfPoints"
-          value={numberOfPoints}
-          onChange={(e) => {
-            const val = e.target.value;
 
-            if (Number.isNaN(Number(val))) {
-              setNumberOfPoints(0);
-            } else {
-              setNumberOfPoints(Number(val));
-            }
-          }}
-          placeholder="Number of Points"
-        />
+        <div className="inputPoints">
+          <input
+            type="number"
+            id="numberOfPoints"
+            name="numberOfPoints"
+            value={numberOfPoints}
+            onChange={(e) => {
+              const val = e.target.value;
 
-        <button
-          onClick={async () => {
-            d3.selectAll("circle").attr("r", 0);
+              if (Number.isNaN(Number(val))) {
+                setNumberOfPoints(0);
+              } else {
+                setNumberOfPoints(Number(val));
+              }
+            }}
+            placeholder="Number of Points"
+          />
 
-            let fetchData: {
-              status: string;
-              data: Array<AxisXY>;
-              message: string;
-            } = await fetch(
-              appendUrlQuery("/generatePoints", {
-                numberOfPoints,
-              })
-            ); //TODO:handle error
+          <button
+            onClick={async () => {
+              d3.selectAll("circle").attr("r", 0);
 
-            setPoints(fetchData.data);
-            calc(fetchData.data);
-          }}
-        >
-          fetch
-        </button>
-      </header>
+              let fetchData: {
+                status: string;
+                data: Array<AxisXY>;
+                message: string;
+              } = await fetch(
+                appendUrlQuery("/generatePoints", {
+                  numberOfPoints,
+                })
+              ); //TODO:handle error
+
+              setPoints(fetchData.data);
+              calc(fetchData.data);
+            }}
+          >
+            fetch
+          </button>
+
+          <text>n: <text id="totalPointsNode" /> </text>
+          <text>
+            number of points inside circle: <text id="pointsInside" />
+          </text>
+          <text>
+            pi estimation: <text id="piEstimation" />
+          </text>
+        </div>
+      </div>
+
+      <div className="how-does-it-work">
+        <h3>
+        How does this work?
+        </h3>
+        <p>Given a square with a squadrant inside of it, uniformly scatter a given number of points <i>n</i> over the square.</p>
+        <p>The ratio of the inside-count and the total-sample-count is an estimate of the ratio of the two areas times 4 equals to estimate π.</p>
+        <p>By the law of large numbers, the larger the number of <i>n</i>, the closer the pi estimation to actual value of π.</p>
+
+      </div>
     </div>
   );
 }
