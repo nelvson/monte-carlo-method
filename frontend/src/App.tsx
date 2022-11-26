@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import * as d3 from "d3";
 import "./App.css";
 
+import HowDoesItWork from "./content/HowDoesItWork"
+import Footer from './content/Footer';
 import { appendUrlQuery, fetch } from "./helper";
 
 function calc(data: Array<AxisXY>) {
@@ -93,6 +95,11 @@ function Axis(props: { data: Array<AxisXY> }) {
 function App() {
   let [numberOfPoints, setNumberOfPoints] = useState(0);
   let [points, setPoints] = useState<Array<AxisXY>>([]);
+  let [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    calc(points);
+  }, [points]);
 
   return (
     <div className="App">
@@ -102,63 +109,97 @@ function App() {
         <Axis data={points} />
 
         <div className="inputPoints">
-          <input
-            type="number"
-            id="numberOfPoints"
-            name="numberOfPoints"
-            value={numberOfPoints}
-            onChange={(e) => {
-              const val = e.target.value;
+          <div>
+            <input
+              type="number"
+              id="numberOfPoints"
+              name="numberOfPoints"
+              value={numberOfPoints}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (Number.isNaN(Number(val))) {
+                  setNumberOfPoints(0);
+                } else {
+                  setNumberOfPoints(Number(val));
+                }
+              }}
+              placeholder="Number of Points"
+            />
 
-              if (Number.isNaN(Number(val))) {
-                setNumberOfPoints(0);
-              } else {
-                setNumberOfPoints(Number(val));
-              }
-            }}
-            placeholder="Number of Points"
-          />
+            <button
+              disabled={loading}
+              onClick={() => {
+                setLoading(true);
+                d3.selectAll("circle").attr("r", 0);
+                setPoints([]);
+                let forFetch = [];
 
-          <button
-            onClick={async () => {
-              d3.selectAll("circle").attr("r", 0);
+                for (let i = 0; numberOfPoints / 200 > i; i++) {
+                  let currentLength = numberOfPoints - 200 * i;
+                  forFetch.push(
+                    fetch(
+                      appendUrlQuery("/generatePoints", {
+                        numberOfPoints:
+                          200 * (i + 1) > numberOfPoints ? currentLength : 200,
+                      })
+                    )
+                  );
+                }
 
-              let fetchData: {
-                status: string;
-                data: Array<AxisXY>;
-                message: string;
-              } = await fetch(
-                appendUrlQuery("/generatePoints", {
-                  numberOfPoints,
-                })
-              ); //TODO:handle error
+                Promise.all(forFetch).then(
+                  (
+                    data: Array<{
+                      status: string;
+                      data: Array<AxisXY>;
+                      message: string;
+                    }>
+                  ) => {
+                    data.forEach(({ data }) => {
+                      setPoints((prevData) => {
+                        let newArr = [...prevData];
+                        newArr.push(...data);
+                        return newArr;
+                      });
+                    });
+                  }
+                );
 
-              setPoints(fetchData.data);
-              calc(fetchData.data);
-            }}
-          >
-            fetch
-          </button>
+                setLoading(false);
+              }}
+            >
+              Generate Points
+            </button>
+          </div>
 
-          <text>n: <text id="totalPointsNode" /> </text>
-          <text>
-            number of points inside circle: <text id="pointsInside" />
-          </text>
-          <text>
-            pi estimation: <text id="piEstimation" />
-          </text>
+          <div>
+            {loading ? (
+              <img
+                width={20}
+                height={20}
+                alt="spinner from wikimedia"
+                src="https://upload.wikimedia.org/wikipedia/commons/c/c7/Loading_2.gif?20170503175831"
+              />
+            ) : (
+              <div>
+                <text>
+                  n: <text id="totalPointsNode" />{" "}
+                </text>
+                <text>
+                  number of points inside circle: <text id="pointsInside" />
+                </text>
+                <text>
+                  pi estimation: <text id="piEstimation" />
+                </text>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="how-does-it-work">
-        <h3>
-        How does this work?
-        </h3>
-        <p>Given a square with a squadrant inside of it, uniformly scatter a given number of points <i>n</i> over the square.</p>
-        <p>The ratio of the inside-count and the total-sample-count is an estimate of the ratio of the two areas times 4 equals to estimate π.</p>
-        <p>By the law of large numbers, the larger the number of <i>n</i>, the closer the pi estimation to actual value of π.</p>
+      <hr color="#4153C9" style={{ height: 5 }} />
+      <HowDoesItWork />
 
-      </div>
+      <Footer />
     </div>
   );
 }
