@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import * as d3 from "d3";
 import "./App.css";
 
+import HowDoesItWork from "./content/HowDoesItWork"
+import Footer from './content/Footer';
 import { appendUrlQuery, fetch } from "./helper";
 
 function calc(data: Array<AxisXY>) {
@@ -90,92 +92,14 @@ function Axis(props: { data: Array<AxisXY> }) {
   return <svg ref={ref} />;
 }
 
-const HowDoesItWork = () => {
-  return (
-    <div className="how-does-it-work">
-      <h3>How does this work?</h3>
-      <div>
-        <figure>
-          <img
-            alt="wiki"
-            height={200}
-            width={200}
-            src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Pi_30K.gif/440px-Pi_30K.gif"
-          />
-          <figcaption>Monte Carlo method for estimating Pi</figcaption>
-        </figure>
-
-        <div>
-          <p>
-            Given a square with a squadrant inside of it, uniformly scatter a
-            given number of points <i>n</i> over the square.
-          </p>
-          <p>
-            The ratio of the inside-count and the total-sample-count is an
-            estimate of the ratio of the two areas times 4 equals to estimate π.
-          </p>
-        </div>
-      </div>
-
-      <div>
-        <div>
-          <p>
-            By the{" "}
-            <a href="https://en.wikipedia.org/wiki/Law_of_large_numbers">
-              law of large numbers (LLN),
-            </a>{" "}
-            the larger the number of <i>n</i>, the closer the pi estimation to
-            actual value of π.
-          </p>
-          <p>
-            Try different value of <i>n</i>, and try it by yourself!
-          </p>
-        </div>
-        <figure>
-          <img
-            alt="Law of large numbers"
-            height={200}
-            width={300}
-            src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Lawoflargenumbers.svg/1920px-Lawoflargenumbers.svg.png"
-          />
-          <figcaption>LLN for rolls of a single dice</figcaption>
-        </figure>
-      </div>
-    </div>
-  );
-};
-
-const Footer = () => {
-  return (
-    <div className="footer">
-      <div className="citations">
-        <h4>Citations & Sources</h4>
-        <a href="https://en.wikipedia.org/wiki/Monte_Carlo_method">
-          <p>Monte Carlo Method - Wikipedia</p>
-        </a>
-        <a href="https://en.wikipedia.org/wiki/Law_of_large_numbers">
-          <p>Law of Large Numbers - Wikipedia</p>
-        </a>
-      </div>
-      <div className="readmore">
-        <h4>Read more about Monte Carlo Method!</h4>
-        <a href="https://www.jstor.org/stable/2686489">
-          <p>
-            Determining Sample Sizes for Monte Carlo Integration. Neal, David.
-            1993
-          </p>
-        </a>
-        <a href="https://blogs.sas.com/content/iml/2016/03/14/monte-carlo-estimates-of-pi.html">
-          <p>Monte Carlo estimates of pi and an important statistical lesson | Blog SAS</p>
-        </a>
-      </div>
-    </div>
-  );
-};
-
 function App() {
   let [numberOfPoints, setNumberOfPoints] = useState(0);
   let [points, setPoints] = useState<Array<AxisXY>>([]);
+  let [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    calc(points);
+  }, [points]);
 
   return (
     <div className="App">
@@ -185,53 +109,90 @@ function App() {
         <Axis data={points} />
 
         <div className="inputPoints">
-          <input
-            type="number"
-            id="numberOfPoints"
-            name="numberOfPoints"
-            value={numberOfPoints}
-            onChange={(e) => {
-              const val = e.target.value;
+          <div>
+            <input
+              type="number"
+              id="numberOfPoints"
+              name="numberOfPoints"
+              value={numberOfPoints}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (Number.isNaN(Number(val))) {
+                  setNumberOfPoints(0);
+                } else {
+                  setNumberOfPoints(Number(val));
+                }
+              }}
+              placeholder="Number of Points"
+            />
 
-              if (Number.isNaN(Number(val))) {
-                setNumberOfPoints(0);
-              } else {
-                setNumberOfPoints(Number(val));
-              }
-            }}
-            placeholder="Number of Points"
-          />
+            <button
+              disabled={loading}
+              onClick={() => {
+                setLoading(true);
+                d3.selectAll("circle").attr("r", 0);
+                setPoints([]);
+                let forFetch = [];
 
-          <button
-            onClick={async () => {
-              d3.selectAll("circle").attr("r", 0);
+                for (let i = 0; numberOfPoints / 200 > i; i++) {
+                  let currentLength = numberOfPoints - 200 * i;
+                  forFetch.push(
+                    fetch(
+                      appendUrlQuery("/generatePoints", {
+                        numberOfPoints:
+                          200 * (i + 1) > numberOfPoints ? currentLength : 200,
+                      })
+                    )
+                  );
+                }
 
-              let fetchData: {
-                status: string;
-                data: Array<AxisXY>;
-                message: string;
-              } = await fetch(
-                appendUrlQuery("/generatePoints", {
-                  numberOfPoints,
-                })
-              ); //TODO:handle error
+                Promise.all(forFetch).then(
+                  (
+                    data: Array<{
+                      status: string;
+                      data: Array<AxisXY>;
+                      message: string;
+                    }>
+                  ) => {
+                    data.forEach(({ data }) => {
+                      setPoints((prevData) => {
+                        let newArr = [...prevData];
+                        newArr.push(...data);
+                        return newArr;
+                      });
+                    });
+                  }
+                );
 
-              setPoints(fetchData.data);
-              calc(fetchData.data);
-            }}
-          >
-            fetch
-          </button>
+                setLoading(false);
+              }}
+            >
+              Generate Points
+            </button>
+          </div>
 
-          <text>
-            n: <text id="totalPointsNode" />{" "}
-          </text>
-          <text>
-            number of points inside circle: <text id="pointsInside" />
-          </text>
-          <text>
-            pi estimation: <text id="piEstimation" />
-          </text>
+          <div>
+            {loading ? (
+              <img
+                width={20}
+                height={20}
+                alt="spinner from wikimedia"
+                src="https://upload.wikimedia.org/wikipedia/commons/c/c7/Loading_2.gif?20170503175831"
+              />
+            ) : (
+              <div>
+                <text>
+                  n: <text id="totalPointsNode" />{" "}
+                </text>
+                <text>
+                  number of points inside circle: <text id="pointsInside" />
+                </text>
+                <text>
+                  pi estimation: <text id="piEstimation" />
+                </text>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
